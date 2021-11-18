@@ -97,7 +97,7 @@ class ProjectApiTestCase(unittest.TestCase):
         data['name'] = 11000100
         response = post_to_register()
 
-        # self.assertEqual(200, response.status_code, 'Send the citizen')
+        self.assertEqual(200, response.status_code, 'Send the citizen')
         self.assertEqual('{"feedback":"registration failed: name cannot be number!"}\n', response.text)
 
     def test_POST_name_as_symbol(self):
