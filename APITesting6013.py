@@ -7,11 +7,16 @@ from datetime import date
 import unittest
 import requests
 from dateutil.relativedelta import relativedelta
+from decouple import config
 
-base_url = 'https://wcg-apis.herokuapp.com'
+base_url = config('BASE_URL')
 
 data = dict(name='', surname='', citizen_id=0, birth_date='',
             occupation='', address='', phone_number='', is_risk=False)
+
+CITIZEN = '{"citizen_id": "1101402211111", "name": "Vichisorn", "surname": "Wejsupakul", "birth_date": "2000-10-26", ' \
+          '"occupation": "Student", "phone_number": "0964590546", "is_risk": "False", "address": "Test Register POST ' \
+          'API", "vaccine_taken": "[]"} '
 
 
 def post_to_register():
@@ -61,6 +66,7 @@ class ProjectApiTestCase(unittest.TestCase):
             url=f"{base_url}/registration/{data['citizen_id']}"
         )
         self.assertEqual(200, response.status_code, 'GET a citizen from citizen API.')
+        self.assertEqual(CITIZEN, response.text)
 
     def test_GET_invalid_citizen(self):
         """
@@ -74,13 +80,21 @@ class ProjectApiTestCase(unittest.TestCase):
 
     def test_DELETE_a_citizen(self):
         """
-        Test delete a citizen from /registration/{citizen_id} but
-        I cannot test the invalid one because it will be delete all citizen databases.
+        Test delete a citizen from /registration/{citizen_id}
         """
         post_to_register()
         response = requests.delete(f"{base_url}/registration/{data['citizen_id']}")
 
         self.assertEqual(200, response.status_code, 'Can delete a citizen from citizen API.')
+
+    def test_DELETE_invalid_citizen(self):
+        """
+        Test delete a citizen from /registration/{citizen_id} but it invalid citizen_id.
+        """
+        post_to_register()
+        response = requests.delete(f"{base_url}/registration/11111111111111111")
+
+        self.assertEqual(404, response.status_code, 'Cannot delete a citizen from citizen API.')
 
     def test_POST_to_register(self):
         """
@@ -89,6 +103,7 @@ class ProjectApiTestCase(unittest.TestCase):
         response = post_to_register()
 
         self.assertEqual(201, response.status_code, 'Can Send to the Register API.')
+        self.assertEqual("registration success!", response.json().get("feedback"))
 
     def test_POST_name_as_number(self):
         """
@@ -231,7 +246,6 @@ class ProjectApiTestCase(unittest.TestCase):
         self.assertEqual('{"feedback":"registration failed: invalid birth date format"}\n', response.text)
 
     def test_POST_not_achieved_minimum_age(self):
-
         """
         Test post to /registration but not achieved minimum age.
         """
