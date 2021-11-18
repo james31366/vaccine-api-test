@@ -3,9 +3,10 @@ Test the citizen and registration apis for the 3:00 AM Group.
 
 @author 6210546013 Vichisorn Wejsupakul
 """
-
+from datetime import date
 import unittest
 import requests
+from dateutil.relativedelta import relativedelta
 
 base_url = 'https://wcg-apis.herokuapp.com'
 
@@ -51,7 +52,7 @@ class ProjectApiTestCase(unittest.TestCase):
 
     def test_GET_a_registration(self):
         """
-        Test get a citizen from /citizen/citizen_id.
+        Test get a citizen from /registration/{citizen_id}.
         """
 
         post_to_register()
@@ -63,7 +64,7 @@ class ProjectApiTestCase(unittest.TestCase):
 
     def test_GET_invalid_citizen(self):
         """
-        Test get a citizen from /citizen/citizen_id but invalid citizen_id.
+        Test get a citizen from /registration/{citizen_id} but invalid citizen_id.
         """
         post_to_register()
         response = requests.get(
@@ -73,7 +74,7 @@ class ProjectApiTestCase(unittest.TestCase):
 
     def test_DELETE_a_citizen(self):
         """
-        Test delete a citizen from /citizen/citizen_id but
+        Test delete a citizen from /registration/{citizen_id} but
         I cannot test the invalid one because it will be delete all citizen databases.
         """
         post_to_register()
@@ -223,17 +224,27 @@ class ProjectApiTestCase(unittest.TestCase):
         """
         Test post to /registration but too old birth date.
         """
-        data['birth_date'] = '1000-01-01'
+        data['birth_date'] = (date.today() - relativedelta(years=1000)).strftime('%Y-%m-%d')
         response = post_to_register()
 
         self.assertEqual(200, response.status_code, 'Send the citizen')
         self.assertEqual('{"feedback":"registration failed: invalid birth date format"}\n', response.text)
 
+    def test_POST_not_achieved_minimum_age(self):
+
+        """
+        Test post to /registration but not achieved minimum age.
+        """
+        data['birth_date'] = (date.today() - relativedelta(years=12)).strftime('%Y-%m-%d')
+        response = post_to_register()
+        self.assertEqual(200, response.status_code, 'Send the citizen')
+        self.assertEqual('{"feedback":"registration failed: not archived minimum age"}\n', response.text)
+
     def test_POST_future_birth_date(self):
         """
         Test post to /registration but future birth date.
         """
-        data['birth_date'] = '2050-01-01'
+        data['birth_date'] = (date.today() + relativedelta(years=1)).strftime('%Y-%m-%d')
         response = post_to_register()
 
         self.assertEqual(200, response.status_code, 'Send the citizen')
